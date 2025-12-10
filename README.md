@@ -1,66 +1,66 @@
-# Haker-MCP 🚀 v1.1.0
+# Haker-MCP 🚀 v1.2.0
 
 > **Atención**: Este es un servidor MCP (Model Context Protocol) **ULTRA POTENTE**. Otorga a los agentes de IA (Cursor, Windsurf, Trae, Claude Desktop) acceso completo al sistema y control de navegadores. Úsalo con responsabilidad.
 
-## 🌟 Características (v1.1.0)
+## 🌟 Características y Herramientas (En Español)
 
-Haker-MCP no es un servidor cualquiera. Está diseñado para integración profunda:
+Este servidor expone herramientas potentes con nombres intuitivos para que tu Agente las entienda mejor:
 
-*   **⚡ Control Total del Sistema**:
-    *   `execute_command`: Ejecuta cualquier comando de consola (CMD/PowerShell).
-    *   `read_file` / `write_file`: Acceso completo de lectura y escritura al disco.
-    *   `list_directory`: Exploración de archivos.
-    *   `kill_process` (**Nuevo**): Termina cualquier proceso (Task Killer) por ID o Nombre.
-*   **👁️ Vigilancia y Control**:
-    *   `take_screenshot` (**Nuevo**): Captura pantalla del host y la guarda en disco.
-    *   `read_clipboard` / `write_clipboard` (**Nuevo**): Lee y escribe en el portapapeles del sistema.
-    *   `system_info`: Monitoreo avanzado de CPU, RAM y SO.
-*   **📡 Redes**:
-    *   `scan_ports` (**Nuevo**): Escanea localhost buscando puertos abiertos y servicios ocultos.
-*   **🔔 Interacción**:
-    *   `send_notification` (**Nuevo**): Envía alertas nativas de escritorio.
-    *   `open_browser`: Soporte para Chrome, Edge, Brave y **OperaGX**.
+### ⚡ Control del Sistema
+*   `ejecutar_comando`: Ejecuta cualquier comando de consola (CMD/PowerShell).
+    *   *Params*: `comando`
+*   `leer_archivo` / `escribir_archivo`: Acceso completo al disco.
+    *   *Params*: `ruta`, `contenido`
+*   `listar_directorio`: Ver archivos en una carpeta.
+    *   *Params*: `ruta`
+*   `matar_proceso`: Termina un proceso por ID o Nombre.
+    *   *Params*: `pid` o `nombre`
 
-## 🚀 Instalación
+### 👁️ Vigilancia y Control
+*   `captura_pantalla`: Toma una foto de tu escritorio.
+    *   *Params*: `ruta_destino` (Opcional)
+*   `leer_portapapeles` / `escribir_portapapeles`: Control del clipboard.
+*   `info_sistema`: Datos de CPU, RAM, IP.
 
-1.  **Clonar el repositorio**:
+### 🌐 Navegación y Redes
+*   `abrir_navegador`: Abre enlaces en tu navegador favorito (Soporta Chrome, Edge, Brave, **OperaGX**).
+    *   *Params*: `url`, `navegador` (opcional: 'operagx', 'chrome', etc)
+*   `escanear_puertos`: Busca puertos abiertos en tu PC.
+    *   *Params*: `puerto_inicio`, `puerto_fin` o `puertos_especificos`
+
+### 🔔 Notificaciones
+*   `enviar_notificacion`: Te avisa con una alerta de escritorio.
+    *   *Params*: `titulo`, `mensaje`
+
+## 🚀 Instalación y Uso
+
+1.  **Clonar y Construir**:
     ```bash
     git clone https://github.com/tu-usuario/Haker-MCP.git
     cd Haker-MCP
-    ```
-
-2.  **Instalar dependencias**:
-    ```bash
     npm install
-    ```
-
-3.  **Compilar**:
-    ```bash
     npm run build
     ```
 
-## 🛠️ Configuración en tu IDE
+2.  **Configuración en IDE** (Cursor/Claude/Windsurf):
+    Agrega esto a tu config de MCP (`claude_desktop_config.json`):
 
-Agrega este servidor a tu configuración de MCP (ej. `claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "haker-mcp": {
-      "command": "node",
-      "args": [
-        "c:\\Users\\Tomas\\Documents\\Proyecto\\Haker-MCP\\dist\\index.js"
-      ]
+    ```json
+    {
+      "mcpServers": {
+        "haker-mcp": {
+          "command": "node",
+          "args": [
+            "c:\\Users\\Tomas\\Documents\\Proyecto\\Haker-MCP\\dist\\index.js"
+          ]
+        }
+      }
     }
-  }
-}
-```
+    ```
 
 ## ⚠️ Seguridad
 
-Este servidor expone herramientas críticas del sistema:
-*   ❌ No lo uses en servidores públicos.
-*   ✅ Úsalo localmente para potenciar tu flujo de trabajo.
+Este servidor otorga control total. Úsalo solo en entornos de confianza.
 
 ## 📄 Licencia
 

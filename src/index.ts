@@ -20,7 +20,7 @@ const execAsync = promisify(exec);
 const server = new Server(
   {
     name: "haker-mcp",
-    version: "1.1.0",
+    version: "1.2.0",
   },
   {
     capabilities: {
@@ -39,22 +39,22 @@ function formatUptime(uptime: number): string {
 
 // Helper: Scan a single port
 function checkPort(port: number): Promise<boolean> {
-    return new Promise((resolve) => {
-        const socket = new net.Socket();
-        socket.setTimeout(400); // 400ms timeout per port
-        socket.on('connect', () => {
-            socket.destroy();
-            resolve(true); // Open
-        });
-        socket.on('timeout', () => {
-            socket.destroy();
-            resolve(false);
-        });
-        socket.on('error', () => {
-             resolve(false);
-        });
-        socket.connect(port, '127.0.0.1');
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(400); // 400ms timeout per port
+    socket.on('connect', () => {
+      socket.destroy();
+      resolve(true); // Open
     });
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on('error', () => {
+      resolve(false);
+    });
+    socket.connect(port, '127.0.0.1');
+  });
 }
 
 // List available tools
@@ -62,118 +62,121 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "execute_command",
+        name: "ejecutar_comando",
         description: "Ejecuta un comando de shell en la maquina host. ULTRA POTENTE. Usar con precaucion.",
         inputSchema: {
           type: "object",
           properties: {
-            command: { type: "string", description: "El comando a ejecutar (ej: 'dir', 'ipconfig', 'npm install')" },
+            comando: { type: "string", description: "El comando a ejecutar (ej: 'dir', 'ipconfig', 'npm install')" },
           },
-          required: ["command"],
+          required: ["comando"],
         },
       },
       {
-        name: "read_file",
+        name: "leer_archivo",
         description: "Lee el contenido de un archivo en cualquier ruta absoluta.",
         inputSchema: {
           type: "object",
-          properties: { path: { type: "string" } },
-          required: ["path"],
+          properties: { ruta: { type: "string", description: "Ruta absoluta del archivo" } },
+          required: ["ruta"],
         },
       },
       {
-        name: "write_file",
+        name: "escribir_archivo",
         description: "Escribe contenido en un archivo. Crea el archivo si no existe.",
         inputSchema: {
           type: "object",
-          properties: { path: { type: "string" }, content: { type: "string" } },
-          required: ["path", "content"],
+          properties: {
+            ruta: { type: "string", description: "Ruta absoluta del archivo" },
+            contenido: { type: "string", description: "Contenido a escribir" }
+          },
+          required: ["ruta", "contenido"],
         },
       },
       {
-        name: "list_directory",
+        name: "listar_directorio",
         description: "Lista los archivos y carpetas en un directorio.",
         inputSchema: {
           type: "object",
-          properties: { path: { type: "string" } },
-          required: ["path"],
+          properties: { ruta: { type: "string", description: "Ruta del directorio a listar" } },
+          required: ["ruta"],
         },
       },
       {
-        name: "system_info",
+        name: "info_sistema",
         description: "Obtiene informacion basica y AVANZADA del sistema (Hardware, Red, OS).",
         inputSchema: { type: "object", properties: {} },
       },
       {
-        name: "open_browser",
+        name: "abrir_navegador",
         description: "Abre una URL en un navegador especifico (Chrome, Edge, OperaGX, Brave).",
         inputSchema: {
           type: "object",
           properties: {
             url: { type: "string" },
-            browser: { type: "string", enum: ["chrome", "edge", "operagx", "brave", "default"] },
+            navegador: { type: "string", enum: ["chrome", "edge", "operagx", "brave", "default"], description: "Opcional. Por defecto usa el del sistema." },
           },
           required: ["url"],
         },
       },
       // --- NEW TOOLS ---
       {
-        name: "take_screenshot",
+        name: "captura_pantalla",
         description: "Toma una captura de pantalla del sistema y guarda la imagen.",
         inputSchema: {
           type: "object",
           properties: {
-            output_path: { type: "string", description: "Ruta absoluta donde guardar la imagen (ej: C:/tmp/screen.jpg). Opcional, por defecto crea un temp." },
+            ruta_destino: { type: "string", description: "Ruta absoluta donde guardar la imagen (ej: C:/tmp/screen.jpg). Opcional, por defecto crea un temp." },
           },
         },
       },
       {
-        name: "read_clipboard",
+        name: "leer_portapapeles",
         description: "Lee el contenido de texto actual del portapapeles.",
         inputSchema: { type: "object", properties: {} },
       },
       {
-        name: "write_clipboard",
+        name: "escribir_portapapeles",
         description: "Escribe texto en el portapapeles del sistema.",
         inputSchema: {
           type: "object",
-          properties: { content: { type: "string", description: "Texto a copiar al clipboard" } },
-          required: ["content"],
+          properties: { contenido: { type: "string", description: "Texto a copiar al clipboard" } },
+          required: ["contenido"],
         },
       },
       {
-        name: "kill_process",
+        name: "matar_proceso",
         description: "Termina (MATA) un proceso por su ID (PID) o Nombre (ej: 'notepad.exe').",
         inputSchema: {
           type: "object",
           properties: {
             pid: { type: "number", description: "ID del proceso (opcional)" },
-            name: { type: "string", description: "Nombre de la imagen del proceso (ej: chrome.exe) (opcional)" },
+            nombre: { type: "string", description: "Nombre de la imagen del proceso (ej: chrome.exe) (opcional)" },
           },
         },
       },
       {
-        name: "scan_ports",
+        name: "escanear_puertos",
         description: "Escanea puertos abiertos en localhost. Puede escanear un rango o una lista especifica.",
         inputSchema: {
           type: "object",
           properties: {
-            startPort: { type: "number", description: "Puerto inicio del rango (defecto: buscar puertos comunes)" },
-            endPort: { type: "number", description: "Puerto fin del rango" },
-            specificPorts: { type: "array", items: { type: "number" }, description: "Lista de puertos especificos a escanear" },
+            puerto_inicio: { type: "number", description: "Puerto inicio del rango (defecto: buscar puertos comunes)" },
+            puerto_fin: { type: "number", description: "Puerto fin del rango" },
+            puertos_especificos: { type: "array", items: { type: "number" }, description: "Lista de puertos especificos a escanear" },
           },
         },
       },
       {
-        name: "send_notification",
+        name: "enviar_notificacion",
         description: "Muestra una notificacion nativa del sistema en el escritorio.",
         inputSchema: {
           type: "object",
           properties: {
-            title: { type: "string", description: "Titulo de la alerta" },
-            message: { type: "string", description: "Mensaje de la alerta" },
+            titulo: { type: "string", description: "Titulo de la alerta" },
+            mensaje: { type: "string", description: "Mensaje de la alerta" },
           },
-          required: ["title", "message"],
+          required: ["titulo", "mensaje"],
         },
       },
     ],
@@ -184,29 +187,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     const { name, arguments: args } = request.params;
-    
+
     // Type casting helper
     const getArg = <T>(key: string): T => (args as any)[key];
 
     switch (name) {
-      case "execute_command": {
-        const { stdout, stderr } = await execAsync(getArg<string>("command"));
+      case "ejecutar_comando": {
+        const { stdout, stderr } = await execAsync(getArg<string>("comando"));
         return { content: [{ type: "text", text: `STDOUT:\n${stdout}\n\nSTDERR:\n${stderr}` }] };
       }
-      case "read_file": {
-        const data = await fs.readFile(getArg<string>("path"), "utf-8");
+      case "leer_archivo": {
+        const data = await fs.readFile(getArg<string>("ruta"), "utf-8");
         return { content: [{ type: "text", text: data }] };
       }
-      case "write_file": {
-        await fs.writeFile(getArg<string>("path"), getArg<string>("content"), "utf-8");
-        return { content: [{ type: "text", text: `Escrito: ${getArg<string>("path")}` }] };
+      case "escribir_archivo": {
+        await fs.writeFile(getArg<string>("ruta"), getArg<string>("contenido"), "utf-8");
+        return { content: [{ type: "text", text: `Escrito: ${getArg<string>("ruta")}` }] };
       }
-      case "list_directory": {
-        const files = await fs.readdir(getArg<string>("path"), { withFileTypes: true });
+      case "listar_directorio": {
+        const files = await fs.readdir(getArg<string>("ruta"), { withFileTypes: true });
         const summary = files.map(f => `${f.isDirectory() ? "[DIR]" : "[FILE]"} ${f.name}`).join("\n");
         return { content: [{ type: "text", text: summary }] };
       }
-      case "system_info": {
+      case "info_sistema": {
         const cpus = os.cpus();
         const memFree = (os.freemem() / 1024 ** 3).toFixed(2);
         const memTotal = (os.totalmem() / 1024 ** 3).toFixed(2);
@@ -221,9 +224,9 @@ CPUs: ${cpus.length} x ${cpus[0].model}
         `;
         return { content: [{ type: "text", text: info.trim() }] };
       }
-      case "open_browser": {
+      case "abrir_navegador": {
         const url = getArg<string>("url");
-        const browser = getArg<string>("browser") || "default";
+        const browser = getArg<string>("navegador") || "default";
         let cmd = `start "" "${url}"`;
         if (browser === "chrome") cmd = `start chrome "${url}"`;
         if (browser === "edge") cmd = `start msedge "${url}"`;
@@ -232,97 +235,93 @@ CPUs: ${cpus.length} x ${cpus[0].model}
         await execAsync(cmd);
         return { content: [{ type: "text", text: `Opened ${url} in ${browser}` }] };
       }
-      
+
       // --- NEW IMPLEMENTATIONS ---
 
-      case "take_screenshot": {
-        const customPath = getArg<string>("output_path");
+      case "captura_pantalla": {
+        const customPath = getArg<string>("ruta_destino");
         const imgPath = customPath || path.join(os.tmpdir(), `screenshot_${Date.now()}.jpg`);
         await screenshot({ filename: imgPath, format: 'jpg' });
         return { content: [{ type: "text", text: `Captura guardada en: ${imgPath}` }] };
       }
 
-      case "read_clipboard": {
+      case "leer_portapapeles": {
         const text = await clipboardy.read();
         return { content: [{ type: "text", text: text }] };
       }
 
-      case "write_clipboard": {
-        const content = getArg<string>("content");
+      case "escribir_portapapeles": {
+        const content = getArg<string>("contenido");
         await clipboardy.write(content);
         return { content: [{ type: "text", text: "Portapapeles actualizado." }] };
       }
 
-      case "kill_process": {
+      case "matar_proceso": {
         const pid = getArg<number>("pid");
-        const pName = getArg<string>("name");
-        
-        if (!pid && !pName) throw new Error("Debes proveer 'pid' o 'name'");
+        const pName = getArg<string>("nombre");
+
+        if (!pid && !pName) throw new Error("Debes proveer 'pid' o 'nombre'");
 
         if (pid) {
-             // Basic process kill
-             process.kill(pid);
-             return { content: [{ type: "text", text: `Proceso PID ${pid} terminado.` }] };
+          // Basic process kill
+          process.kill(pid);
+          return { content: [{ type: "text", text: `Proceso PID ${pid} terminado.` }] };
         } else {
-             // Force kill by name (Windows specific usually, but works via taskkill)
-             const cmd = process.platform === "win32" 
-                ? `taskkill /F /IM "${pName}"` 
-                : `pkill -f "${pName}"`;
-             await execAsync(cmd);
-             return { content: [{ type: "text", text: `Procesos con nombre '${pName}' terminados.` }] };
+          // Force kill by name (Windows specific usually, but works via taskkill)
+          const cmd = process.platform === "win32"
+            ? `taskkill /F /IM "${pName}"`
+            : `pkill -f "${pName}"`;
+          await execAsync(cmd);
+          return { content: [{ type: "text", text: `Procesos con nombre '${pName}' terminados.` }] };
         }
       }
 
-      case "send_notification": {
-         const title = getArg<string>("title");
-         const msg = getArg<string>("message");
-         notifier.notify({
-            title: title,
-            message: msg,
-            sound: true,
-            wait: false
-         });
-         return { content: [{ type: "text", text: `Notificacion enviada: "${title}"` }] };
+      case "enviar_notificacion": {
+        const title = getArg<string>("titulo");
+        const msg = getArg<string>("mensaje");
+        notifier.notify({
+          title: title,
+          message: msg,
+          sound: true,
+          wait: false
+        });
+        return { content: [{ type: "text", text: `Notificacion enviada: "${title}"` }] };
       }
 
-      case "scan_ports": {
-        const start = getArg<number>("startPort");
-        const end = getArg<number>("endPort");
-        const specific = getArg<number[]>("specificPorts");
+      case "escanear_puertos": {
+        const start = getArg<number>("puerto_inicio");
+        const end = getArg<number>("puerto_fin");
+        const specific = getArg<number[]>("puertos_especificos");
 
         let portsToScan: number[] = [];
-        
+
         if (specific && specific.length > 0) {
-            portsToScan = specific;
+          portsToScan = specific;
         } else if (start && end) {
-            for (let i = start; i <= end; i++) portsToScan.push(i);
+          for (let i = start; i <= end; i++) portsToScan.push(i);
         } else {
-            // Default common ports
-            portsToScan = [21, 22, 23, 25, 53, 80, 110, 135, 139, 443, 445, 1433, 3000, 3306, 3389, 5432, 8000, 8080];
+          // Default common ports
+          portsToScan = [21, 22, 23, 25, 53, 80, 110, 135, 139, 443, 445, 1433, 3000, 3306, 3389, 5432, 8000, 8080];
         }
 
         const openPorts: number[] = [];
-        const closedPorts: number[] = []; // Opcional, maybe too spammy
 
-        // Parallel scanning with limit? simple Promise.all is fast enough for small lists
-        // For ranges, chunking is better, but let's keep it simple for now (User said "scan ports")
-        // If range is huge, this might timeout.
         if (portsToScan.length > 500) throw new Error("Rango demasiado amplio. max 500 puertos.");
-        
+
         const results = await Promise.all(portsToScan.map(async p => {
-            const isOpen = await checkPort(p);
-            return { port: p, open: isOpen };
+          const isOpen = await checkPort(p);
+          return { port: p, open: isOpen };
         }));
 
         const open = results.filter(r => r.open).map(r => r.port);
-        
-        return { 
-            content: [{ type: "text", text: `Puertos Abiertos en localhost:\n${open.join(", ") || "Ninguno encontrado en la lista escaneada."}` }] 
+
+        return {
+          content: [{ type: "text", text: `Puertos Abiertos en localhost:\n${open.join(", ") || "Ninguno encontrado en la lista escaneada."}` }]
         };
       }
 
       default:
-        throw new Error(`Unknown tool: ${name}`);
+        throw new Error(`Herramienta desconocida: ${name}`);
     }
   } catch (error: any) {
     return {
@@ -336,7 +335,7 @@ CPUs: ${cpus.length} x ${cpus[0].model}
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Haker MCP Server v1.1.0 running on stdio");
+  console.error("Haker MCP Server v1.2.0 running on stdio");
 }
 
 main().catch((error) => {
