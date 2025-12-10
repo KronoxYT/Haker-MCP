@@ -1,8 +1,8 @@
-# Haker-MCP 🚀
+# Haker-MCP 🚀 v1.1.0
 
 > **Atención**: Este es un servidor MCP (Model Context Protocol) **ULTRA POTENTE**. Otorga a los agentes de IA (Cursor, Windsurf, Trae, Claude Desktop) acceso completo al sistema y control de navegadores. Úsalo con responsabilidad.
 
-## 🌟 Características
+## 🌟 Características (v1.1.0)
 
 Haker-MCP no es un servidor cualquiera. Está diseñado para integración profunda:
 
@@ -10,11 +10,16 @@ Haker-MCP no es un servidor cualquiera. Está diseñado para integración profun
     *   `execute_command`: Ejecuta cualquier comando de consola (CMD/PowerShell).
     *   `read_file` / `write_file`: Acceso completo de lectura y escritura al disco.
     *   `list_directory`: Exploración de archivos.
-*   **🖥️ Información Avanzada**:
-    *   `system_info`: Monitoreo de CPU, RAM, Redes y procesos en tiempo real.
-*   **🌐 Control de Navegador**:
-    *   `open_browser`: Abre enlaces automáticamente en tu navegador favorito.
-    *   **Soporte Multi-Browser**: Chrome, Edge, Brave, y **OperaGX**.
+    *   `kill_process` (**Nuevo**): Termina cualquier proceso (Task Killer) por ID o Nombre.
+*   **👁️ Vigilancia y Control**:
+    *   `take_screenshot` (**Nuevo**): Captura pantalla del host y la guarda en disco.
+    *   `read_clipboard` / `write_clipboard` (**Nuevo**): Lee y escribe en el portapapeles del sistema.
+    *   `system_info`: Monitoreo avanzado de CPU, RAM y SO.
+*   **📡 Redes**:
+    *   `scan_ports` (**Nuevo**): Escanea localhost buscando puertos abiertos y servicios ocultos.
+*   **🔔 Interacción**:
+    *   `send_notification` (**Nuevo**): Envía alertas nativas de escritorio.
+    *   `open_browser`: Soporte para Chrome, Edge, Brave y **OperaGX**.
 
 ## 🚀 Instalación
 
@@ -44,7 +49,7 @@ Agrega este servidor a tu configuración de MCP (ej. `claude_desktop_config.json
     "haker-mcp": {
       "command": "node",
       "args": [
-        "C:\\Ruta\\Absoluta\\A\\Haker-MCP\\dist\\index.js"
+        "c:\\Users\\Tomas\\Documents\\Proyecto\\Haker-MCP\\dist\\index.js"
       ]
     }
   }
@@ -53,10 +58,10 @@ Agrega este servidor a tu configuración de MCP (ej. `claude_desktop_config.json
 
 ## ⚠️ Seguridad
 
-Este servidor expone herramientas críticas del sistema (`child_process.exec`, `fs`).
-*   ❌ No lo uses en servidores públicos expuestos a internet.
-*   ✅ Úsalo localmente para potenciar tu flujo de trabajo de desarrollo con IA.
+Este servidor expone herramientas críticas del sistema:
+*   ❌ No lo uses en servidores públicos.
+*   ✅ Úsalo localmente para potenciar tu flujo de trabajo.
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+MIT License
