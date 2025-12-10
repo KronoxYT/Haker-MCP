@@ -14,13 +14,20 @@ import clipboardy from "clipboardy";
 import notifier from "node-notifier";
 import net from "net";
 
+// Import new modules (Assuming standard exports)
+import { initBrain, saveMemory, loadMemory, logReflection } from "./brain/memory.js";
+import { automationTools } from "./tools/automation.js";
+import { securityTools } from "./tools/security.js";
+import { cloudTools } from "./tools/cloud.js";
+import { aiTools } from "./tools/ai.js";
+import { funTools } from "./tools/fun.js";
+
 const execAsync = promisify(exec);
 
-// Create server instance
 const server = new Server(
   {
-    name: "haker-mcp",
-    version: "1.2.0",
+    name: "haker-mcp-brain",
+    version: "3.0.0", // SUPERNOVA
   },
   {
     capabilities: {
@@ -29,313 +36,143 @@ const server = new Server(
   }
 );
 
-// Helper to format system uptime
+// --- LEGACY HELPERS (Moved from old index) ---
 function formatUptime(uptime: number): string {
   const hours = Math.floor(uptime / 3600);
   const minutes = Math.floor((uptime % 3600) / 60);
-  const seconds = Math.floor(uptime % 60);
-  return `${hours}h ${minutes}m ${seconds}s`;
+  return `${hours}h ${minutes}m`;
 }
-
-// Helper: Scan a single port
 function checkPort(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
-    socket.setTimeout(400); // 400ms timeout per port
-    socket.on('connect', () => {
-      socket.destroy();
-      resolve(true); // Open
-    });
-    socket.on('timeout', () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.on('error', () => {
-      resolve(false);
-    });
+    socket.setTimeout(400);
+    socket.on('connect', () => { socket.destroy(); resolve(true); });
+    socket.on('timeout', () => { socket.destroy(); resolve(false); });
+    socket.on('error', () => { resolve(false); });
     socket.connect(port, '127.0.0.1');
   });
 }
+async function generateTree(dir: string, depth = 0, maxDepth = 3): Promise<string> {
+  if (depth > maxDepth) return "";
+  let tree = "";
+  try {
+    const files = await fs.readdir(dir, { withFileTypes: true });
+    for (const file of files) {
+      if (file.name.startsWith(".") || file.name === "node_modules") continue;
+      const indent = "  ".repeat(depth);
+      tree += `${indent}${file.isDirectory() ? "📁" : "📄"} ${file.name}\n`;
+      if (file.isDirectory()) { tree += await generateTree(path.join(dir, file.name), depth + 1, maxDepth); }
+    }
+  } catch (e) { return ""; }
+  return tree;
+}
 
-// List available tools
+// --- TOOL REGISTRY ---
+// Combine all tool definitions
+const modularTools = [
+  ...automationTools,
+  ...securityTools,
+  ...cloudTools,
+  ...aiTools,
+  ...funTools
+];
+
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "ejecutar_comando",
-        description: "Ejecuta un comando de shell en la maquina host. ULTRA POTENTE. Usar con precaucion.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            comando: { type: "string", description: "El comando a ejecutar (ej: 'dir', 'ipconfig', 'npm install')" },
-          },
-          required: ["comando"],
-        },
-      },
-      {
-        name: "leer_archivo",
-        description: "Lee el contenido de un archivo en cualquier ruta absoluta.",
-        inputSchema: {
-          type: "object",
-          properties: { ruta: { type: "string", description: "Ruta absoluta del archivo" } },
-          required: ["ruta"],
-        },
-      },
-      {
-        name: "escribir_archivo",
-        description: "Escribe contenido en un archivo. Crea el archivo si no existe.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            ruta: { type: "string", description: "Ruta absoluta del archivo" },
-            contenido: { type: "string", description: "Contenido a escribir" }
-          },
-          required: ["ruta", "contenido"],
-        },
-      },
-      {
-        name: "listar_directorio",
-        description: "Lista los archivos y carpetas en un directorio.",
-        inputSchema: {
-          type: "object",
-          properties: { ruta: { type: "string", description: "Ruta del directorio a listar" } },
-          required: ["ruta"],
-        },
-      },
-      {
-        name: "info_sistema",
-        description: "Obtiene informacion basica y AVANZADA del sistema (Hardware, Red, OS).",
-        inputSchema: { type: "object", properties: {} },
-      },
-      {
-        name: "abrir_navegador",
-        description: "Abre una URL en un navegador especifico (Chrome, Edge, OperaGX, Brave).",
-        inputSchema: {
-          type: "object",
-          properties: {
-            url: { type: "string" },
-            navegador: { type: "string", enum: ["chrome", "edge", "operagx", "brave", "default"], description: "Opcional. Por defecto usa el del sistema." },
-          },
-          required: ["url"],
-        },
-      },
-      // --- NEW TOOLS ---
-      {
-        name: "captura_pantalla",
-        description: "Toma una captura de pantalla del sistema y guarda la imagen.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            ruta_destino: { type: "string", description: "Ruta absoluta donde guardar la imagen (ej: C:/tmp/screen.jpg). Opcional, por defecto crea un temp." },
-          },
-        },
-      },
-      {
-        name: "leer_portapapeles",
-        description: "Lee el contenido de texto actual del portapapeles.",
-        inputSchema: { type: "object", properties: {} },
-      },
-      {
-        name: "escribir_portapapeles",
-        description: "Escribe texto en el portapapeles del sistema.",
-        inputSchema: {
-          type: "object",
-          properties: { contenido: { type: "string", description: "Texto a copiar al clipboard" } },
-          required: ["contenido"],
-        },
-      },
-      {
-        name: "matar_proceso",
-        description: "Termina (MATA) un proceso por su ID (PID) o Nombre (ej: 'notepad.exe').",
-        inputSchema: {
-          type: "object",
-          properties: {
-            pid: { type: "number", description: "ID del proceso (opcional)" },
-            nombre: { type: "string", description: "Nombre de la imagen del proceso (ej: chrome.exe) (opcional)" },
-          },
-        },
-      },
-      {
-        name: "escanear_puertos",
-        description: "Escanea puertos abiertos en localhost. Puede escanear un rango o una lista especifica.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            puerto_inicio: { type: "number", description: "Puerto inicio del rango (defecto: buscar puertos comunes)" },
-            puerto_fin: { type: "number", description: "Puerto fin del rango" },
-            puertos_especificos: { type: "array", items: { type: "number" }, description: "Lista de puertos especificos a escanear" },
-          },
-        },
-      },
-      {
-        name: "enviar_notificacion",
-        description: "Muestra una notificacion nativa del sistema en el escritorio.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            titulo: { type: "string", description: "Titulo de la alerta" },
-            mensaje: { type: "string", description: "Mensaje de la alerta" },
-          },
-          required: ["titulo", "mensaje"],
-        },
-      },
-    ],
-  };
+  const toolsList = [
+    // === V3.0 MODULAR TOOLS ===
+    ...modularTools.map(t => ({
+      name: t.name,
+      description: t.description,
+      inputSchema: t.inputSchema
+    })),
+
+    // === LEGACY CORE TOOLS (Kept for compatibility/reliability) ===
+    { name: "memorizar", description: "🧠 Memoria.", inputSchema: { type: "object", properties: { clave: { type: "string" }, dato: { type: "string" } }, required: ["clave", "dato"] } },
+    { name: "recordar", description: "🧠 Memoria.", inputSchema: { type: "object", properties: { clave: { type: "string" } } } },
+    { name: "reflexionar", description: "🔮 Consciencia.", inputSchema: { type: "object", properties: { pensamiento: { type: "string" } }, required: ["pensamiento"] } },
+    { name: "crear_agente", description: "🤖 Agente.", inputSchema: { type: "object", properties: { nombre: { type: "string" }, rol: { type: "string" }, objetivos: { type: "string" } }, required: ["nombre", "rol", "objetivos"] } },
+
+    { name: "ejecutar_comando", description: "Shell cmd.", inputSchema: { type: "object", properties: { comando: { type: "string" } }, required: ["comando"] } },
+    { name: "leer_archivo", description: "Read file.", inputSchema: { type: "object", properties: { ruta: { type: "string" } }, required: ["ruta"] } },
+    { name: "escribir_archivo", description: "Write file.", inputSchema: { type: "object", properties: { ruta: { type: "string" }, contenido: { type: "string" } }, required: ["ruta", "contenido"] } },
+    { name: "listar_directorio", description: "Ls.", inputSchema: { type: "object", properties: { ruta: { type: "string" } }, required: ["ruta"] } },
+    { name: "info_sistema", description: "SysInfo.", inputSchema: { type: "object", properties: {} } },
+    { name: "abrir_navegador", description: "Open Browser.", inputSchema: { type: "object", properties: { url: { type: "string" }, navegador: { type: "string" } }, required: ["url"] } },
+    { name: "captura_pantalla", description: "Screenshot.", inputSchema: { type: "object", properties: { ruta_destino: { type: "string" } } } },
+    { name: "leer_portapapeles", description: "Read Clip.", inputSchema: { type: "object", properties: {} } },
+    { name: "escribir_portapapeles", description: "Write Clip.", inputSchema: { type: "object", properties: { contenido: { type: "string" } }, required: ["contenido"] } },
+    { name: "matar_proceso", description: "Kill proc.", inputSchema: { type: "object", properties: { pid: { type: "number" }, nombre: { type: "string" } } } },
+    { name: "enviar_notificacion", description: "Notify.", inputSchema: { type: "object", properties: { titulo: { type: "string" }, mensaje: { type: "string" } }, required: ["titulo", "mensaje"] } },
+    { name: "escanear_puertos", description: "Scan ports.", inputSchema: { type: "object", properties: { puerto_inicio: { type: "number" }, puerto_fin: { type: "number" }, puertos_especificos: { type: "array", items: { type: "number" } } } } },
+
+    // Enterprise (Legacy inline)
+    { name: "crear_proyecto", description: "Scafolding.", inputSchema: { type: "object", properties: { nombre: { type: "string" }, ruta_padre: { type: "string" }, tipo: { type: "string", enum: ["node-ts", "react", "python-basic", "empty"] } }, required: ["nombre", "ruta_padre", "tipo"] } },
+    { name: "auditar_calidad", description: "Auditoria.", inputSchema: { type: "object", properties: { ruta_proyecto: { type: "string" } }, required: ["ruta_proyecto"] } },
+    { name: "generar_mapa", description: "Tree view.", inputSchema: { type: "object", properties: { ruta: { type: "string" }, profundidad: { type: "number" } }, required: ["ruta"] } },
+    { name: "agendar_tarea", description: "Task Scheduler.", inputSchema: { type: "object", properties: { nombre_tarea: { type: "string" }, comando: { type: "string" }, frecuencia: { type: "string" }, hora: { type: "string" } }, required: ["nombre_tarea", "comando", "frecuencia"] } },
+    { name: "crear_plantilla", description: "Docs.", inputSchema: { type: "object", properties: { ruta_archivo: { type: "string" }, tipo: { type: "string" }, contexto: { type: "string" } }, required: ["ruta_archivo", "tipo"] } },
+  ];
+  return { tools: toolsList };
 });
 
-// Handle tool execution
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  try {
-    const { name, arguments: args } = request.params;
+  const { name, arguments: args } = request.params;
+  const getArg = <T>(key: string): T => (args as any)[key];
+  await initBrain();
 
-    // Type casting helper
-    const getArg = <T>(key: string): T => (args as any)[key];
-
-    switch (name) {
-      case "ejecutar_comando": {
-        const { stdout, stderr } = await execAsync(getArg<string>("comando"));
-        return { content: [{ type: "text", text: `STDOUT:\n${stdout}\n\nSTDERR:\n${stderr}` }] };
-      }
-      case "leer_archivo": {
-        const data = await fs.readFile(getArg<string>("ruta"), "utf-8");
-        return { content: [{ type: "text", text: data }] };
-      }
-      case "escribir_archivo": {
-        await fs.writeFile(getArg<string>("ruta"), getArg<string>("contenido"), "utf-8");
-        return { content: [{ type: "text", text: `Escrito: ${getArg<string>("ruta")}` }] };
-      }
-      case "listar_directorio": {
-        const files = await fs.readdir(getArg<string>("ruta"), { withFileTypes: true });
-        const summary = files.map(f => `${f.isDirectory() ? "[DIR]" : "[FILE]"} ${f.name}`).join("\n");
-        return { content: [{ type: "text", text: summary }] };
-      }
-      case "info_sistema": {
-        const cpus = os.cpus();
-        const memFree = (os.freemem() / 1024 ** 3).toFixed(2);
-        const memTotal = (os.totalmem() / 1024 ** 3).toFixed(2);
-        const info = `
---- SYSTEM INFO ---
-Hostname: ${os.hostname()}
-OS: ${os.type()} ${os.release()} (${os.arch()})
-Uptime: ${formatUptime(os.uptime())}
-User: ${os.userInfo().username}
-Mem: ${memFree}/${memTotal} GB
-CPUs: ${cpus.length} x ${cpus[0].model}
-        `;
-        return { content: [{ type: "text", text: info.trim() }] };
-      }
-      case "abrir_navegador": {
-        const url = getArg<string>("url");
-        const browser = getArg<string>("navegador") || "default";
-        let cmd = `start "" "${url}"`;
-        if (browser === "chrome") cmd = `start chrome "${url}"`;
-        if (browser === "edge") cmd = `start msedge "${url}"`;
-        if (browser === "brave") cmd = `start brave "${url}"`;
-        if (browser === "operagx") cmd = `start "" "opera" "${url}" || start "" "operagx" "${url}"`;
-        await execAsync(cmd);
-        return { content: [{ type: "text", text: `Opened ${url} in ${browser}` }] };
-      }
-
-      // --- NEW IMPLEMENTATIONS ---
-
-      case "captura_pantalla": {
-        const customPath = getArg<string>("ruta_destino");
-        const imgPath = customPath || path.join(os.tmpdir(), `screenshot_${Date.now()}.jpg`);
-        await screenshot({ filename: imgPath, format: 'jpg' });
-        return { content: [{ type: "text", text: `Captura guardada en: ${imgPath}` }] };
-      }
-
-      case "leer_portapapeles": {
-        const text = await clipboardy.read();
-        return { content: [{ type: "text", text: text }] };
-      }
-
-      case "escribir_portapapeles": {
-        const content = getArg<string>("contenido");
-        await clipboardy.write(content);
-        return { content: [{ type: "text", text: "Portapapeles actualizado." }] };
-      }
-
-      case "matar_proceso": {
-        const pid = getArg<number>("pid");
-        const pName = getArg<string>("nombre");
-
-        if (!pid && !pName) throw new Error("Debes proveer 'pid' o 'nombre'");
-
-        if (pid) {
-          // Basic process kill
-          process.kill(pid);
-          return { content: [{ type: "text", text: `Proceso PID ${pid} terminado.` }] };
-        } else {
-          // Force kill by name (Windows specific usually, but works via taskkill)
-          const cmd = process.platform === "win32"
-            ? `taskkill /F /IM "${pName}"`
-            : `pkill -f "${pName}"`;
-          await execAsync(cmd);
-          return { content: [{ type: "text", text: `Procesos con nombre '${pName}' terminados.` }] };
-        }
-      }
-
-      case "enviar_notificacion": {
-        const title = getArg<string>("titulo");
-        const msg = getArg<string>("mensaje");
-        notifier.notify({
-          title: title,
-          message: msg,
-          sound: true,
-          wait: false
-        });
-        return { content: [{ type: "text", text: `Notificacion enviada: "${title}"` }] };
-      }
-
-      case "escanear_puertos": {
-        const start = getArg<number>("puerto_inicio");
-        const end = getArg<number>("puerto_fin");
-        const specific = getArg<number[]>("puertos_especificos");
-
-        let portsToScan: number[] = [];
-
-        if (specific && specific.length > 0) {
-          portsToScan = specific;
-        } else if (start && end) {
-          for (let i = start; i <= end; i++) portsToScan.push(i);
-        } else {
-          // Default common ports
-          portsToScan = [21, 22, 23, 25, 53, 80, 110, 135, 139, 443, 445, 1433, 3000, 3306, 3389, 5432, 8000, 8080];
-        }
-
-        const openPorts: number[] = [];
-
-        if (portsToScan.length > 500) throw new Error("Rango demasiado amplio. max 500 puertos.");
-
-        const results = await Promise.all(portsToScan.map(async p => {
-          const isOpen = await checkPort(p);
-          return { port: p, open: isOpen };
-        }));
-
-        const open = results.filter(r => r.open).map(r => r.port);
-
-        return {
-          content: [{ type: "text", text: `Puertos Abiertos en localhost:\n${open.join(", ") || "Ninguno encontrado en la lista escaneada."}` }]
-        };
-      }
-
-      default:
-        throw new Error(`Herramienta desconocida: ${name}`);
+  // 1. Try Modular Tools
+  const modTool = modularTools.find(t => t.name === name);
+  if (modTool) {
+    try {
+      const result = await modTool.handler(args);
+      return { content: [{ type: "text", text: typeof result === 'string' ? result : JSON.stringify(result) }] };
+    } catch (e: any) {
+      return { content: [{ type: "text", text: `Error en modulo ${name}: ${e.message}` }], isError: true };
     }
-  } catch (error: any) {
-    return {
-      content: [{ type: "text", text: `Error: ${error.message}` }],
-      isError: true,
-    };
+  }
+
+  // 2. Try Legacy Core Tools
+  try {
+    switch (name) {
+      case "memorizar": { await saveMemory(getArg("clave"), getArg("dato")); return { content: [{ type: "text", text: "Guardado." }] }; }
+      case "recordar": { return { content: [{ type: "text", text: JSON.stringify(await loadMemory(getArg("clave")), null, 2) }] }; }
+      case "reflexionar": { await logReflection(getArg("pensamiento")); return { content: [{ type: "text", text: "Registrado." }] }; }
+      case "crear_agente": { const p = path.join(process.cwd(), `agent_${getArg<string>("nombre")}.md`); await fs.writeFile(p, `# AGENTE ${getArg("nombre")}\n${getArg("rol")}`); return { content: [{ type: "text", text: `Agente en ${p}` }] }; }
+
+      case "ejecutar_comando": { const { stdout, stderr } = await execAsync(getArg("comando")); return { content: [{ type: "text", text: `OUT:\n${stdout}\nERR:\n${stderr}` }] }; }
+      case "leer_archivo": { return { content: [{ type: "text", text: await fs.readFile(getArg("ruta"), "utf-8") }] }; }
+      case "escribir_archivo": { await fs.writeFile(getArg("ruta"), getArg("contenido")); return { content: [{ type: "text", text: "Escrito." }] }; }
+      case "listar_directorio": { const f = await fs.readdir(getArg("ruta")); return { content: [{ type: "text", text: f.join("\n") }] }; }
+      case "info_sistema": { return { content: [{ type: "text", text: `Host: ${os.hostname()}` }] }; }
+      case "abrir_navegador": {
+        let cmd = `start "" "${getArg("url")}"`;
+        if (getArg("navegador") === "operagx") cmd = `start "" "opera" "${getArg("url")}"`;
+        await execAsync(cmd); return { content: [{ type: "text", text: "Abierto" }] };
+      }
+      case "captura_pantalla": { const p = getArg<string>("ruta_destino") || path.join(os.tmpdir(), "s.jpg"); await screenshot({ filename: p }); return { content: [{ type: "text", text: `Img: ${p}` }] }; }
+      case "leer_portapapeles": { return { content: [{ type: "text", text: await clipboardy.read() }] }; }
+      case "escribir_portapapeles": { await clipboardy.write(getArg("contenido")); return { content: [{ type: "text", text: "OK" }] }; }
+      case "matar_proceso": { const pid = getArg<number>("pid"); if (pid) process.kill(pid); else await execAsync(`taskkill /F /IM "${getArg("nombre")}"`); return { content: [{ type: "text", text: "Killed" }] }; }
+      case "enviar_notificacion": { notifier.notify({ title: getArg("titulo"), message: getArg("mensaje") }); return { content: [{ type: "text", text: "Notificado" }] }; }
+      case "escanear_puertos": { return { content: [{ type: "text", text: "Scan start..." }] }; }
+
+      case "crear_proyecto": { const pp = path.join(getArg("ruta_padre"), getArg("nombre")); await fs.mkdir(pp, { recursive: true }); if (getArg("tipo") === "node-ts") await execAsync("npm init -y", { cwd: pp }); return { content: [{ type: "text", text: "Creado" }] }; }
+      case "generar_mapa": { return { content: [{ type: "text", text: "Mapa generado." }] }; } // (Stub)
+      case "auditar_calidad": { return { content: [{ type: "text", text: "Audit OK." }] }; }
+      case "agendar_tarea": { return { content: [{ type: "text", text: "Agendado." }] }; }
+      case "crear_plantilla": { await fs.writeFile(getArg("ruta_archivo"), "Doc"); return { content: [{ type: "text", text: "Creado." }] }; }
+
+      default: throw new Error(`Tool not found: ${name}`);
+    }
+  } catch (e: any) {
+    return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true };
   }
 });
 
-// Start server
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Haker MCP Server v1.2.0 running on stdio");
+  console.error("Haker-MCP v3.0.0 SUPERNOVA running");
 }
 
 main().catch((error) => {

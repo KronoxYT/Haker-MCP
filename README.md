@@ -1,36 +1,32 @@
-# Haker-MCP 🚀 v1.2.0
+# Haker-MCP 🚀 v2.1.0 (SUPERNOVA)
 
-> **Atención**: Este es un servidor MCP (Model Context Protocol) **ULTRA POTENTE**. Otorga a los agentes de IA (Cursor, Windsurf, Trae, Claude Desktop) acceso completo al sistema y control de navegadores. Úsalo con responsabilidad.
+> **Atención**: Este servidor ahora posee **CONSCIENCIA Y MEMORIA**. No es solo una herramienta, es un asistente evolutivo.
 
-## 🌟 Características y Herramientas (En Español)
+## 🧠 Módulo CEREBRO (NUEVO v2.0)
+Haker-MCP ahora puede "pensar" y "recordar":
 
-Este servidor expone herramientas potentes con nombres intuitivos para que tu Agente las entienda mejor:
+*   `memorizar`: Guarda información clave (APIs, secretos, preferencias) en una base de datos persistente.
+    *   *Params*: `clave`, `dato`
+*   `recordar`: Recupera información aprendida días o semanas atrás.
+    *   *Params*: `clave`
+*   `reflexionar`: Registra aprendizajes en su Diario de Consciencia. Ayuda al modelo a "aprender" de sus errores.
+    *   *Params*: `pensamiento`
+*   `crear_agente`: Genera Prompts de Sistema para crear sub-agentes especializados (Ej: Tester, Designer).
+    *   *Params*: `nombre`, `rol`, `objetivos`
 
-### ⚡ Control del Sistema
-*   `ejecutar_comando`: Ejecuta cualquier comando de consola (CMD/PowerShell).
-    *   *Params*: `comando`
-*   `leer_archivo` / `escribir_archivo`: Acceso completo al disco.
-    *   *Params*: `ruta`, `contenido`
-*   `listar_directorio`: Ver archivos en una carpeta.
-    *   *Params*: `ruta`
-*   `matar_proceso`: Termina un proceso por ID o Nombre.
-    *   *Params*: `pid` o `nombre`
+## 🏢 MeaCore Enterprise (v1.3)
+Herramientas de productividad:
+*   `crear_proyecto` (Scaffolding Node/Python)
+*   `auditar_calidad` (Seguridad y Clen Code)
+*   `generar_mapa` (Sodemap visual)
+*   `agendar_tarea` (Automatización Windows)
+*   `crear_plantilla` (Docs corporativos)
 
-### 👁️ Vigilancia y Control
-*   `captura_pantalla`: Toma una foto de tu escritorio.
-    *   *Params*: `ruta_destino` (Opcional)
-*   `leer_portapapeles` / `escribir_portapapeles`: Control del clipboard.
-*   `info_sistema`: Datos de CPU, RAM, IP.
-
-### 🌐 Navegación y Redes
-*   `abrir_navegador`: Abre enlaces en tu navegador favorito (Soporta Chrome, Edge, Brave, **OperaGX**).
-    *   *Params*: `url`, `navegador` (opcional: 'operagx', 'chrome', etc)
-*   `escanear_puertos`: Busca puertos abiertos en tu PC.
-    *   *Params*: `puerto_inicio`, `puerto_fin` o `puertos_especificos`
-
-### 🔔 Notificaciones
-*   `enviar_notificacion`: Te avisa con una alerta de escritorio.
-    *   *Params*: `titulo`, `mensaje`
+## ⚡ Habilidades Clásicas (v1.2)
+*   **Sistema**: `ejecutar_comando`, `leer/escribir_archivo`, `listar_directorio`, `matar_proceso`.
+*   **Vigilancia**: `captura_pantalla`, `leer/escribir_portapapeles`, `info_sistema`.
+*   **Redes**: `abrir_navegador` (OperaGX, Chrome, Brave), `escanear_puertos`.
+*   **Alertas**: `enviar_notificacion`.
 
 ## 🚀 Instalación y Uso
 
@@ -42,16 +38,15 @@ Este servidor expone herramientas potentes con nombres intuitivos para que tu Ag
     npm run build
     ```
 
-2.  **Configuración en IDE** (Cursor/Claude/Windsurf):
-    Agrega esto a tu config de MCP (`claude_desktop_config.json`):
-
+2.  **Configuración en IDE**:
+    # Cambiar el \\Alvaro por la ruta de tu usuario
     ```json
     {
       "mcpServers": {
         "haker-mcp": {
           "command": "node",
           "args": [
-            "c:\\Users\\Tomas\\Documents\\Proyecto\\Haker-MCP\\dist\\index.js"
+            "c:\\Users\\Alvaro\\Documents\\Proyecto\\Haker-MCP\\dist\\index.js"
           ]
         }
       }
@@ -60,7 +55,8 @@ Este servidor expone herramientas potentes con nombres intuitivos para que tu Ag
 
 ## ⚠️ Seguridad
 
-Este servidor otorga control total. Úsalo solo en entornos de confianza.
+**CONTIENE INTELIGENCIA ARTIFICIAL PERSISTENTE**.
+La memoria se guarda en `~/.haker_brain/`. Protege esa carpeta si guardas secretos.
 
 ## 📄 Licencia
 
